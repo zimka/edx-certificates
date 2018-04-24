@@ -142,3 +142,5 @@ TEMPLATE_DIR = os.path.join(CERT_PRIVATE_DIR, TEMPLATE_DATA_SUBDIR)
 
 with open(os.path.join(CERT_PRIVATE_DIR, CERT_DATA_FILE)) as f:
     CERT_DATA = yaml.load(f.read().decode("utf-8"))
+DEFAULT_VERSION = 'extern'
+EXTERN_GENERATOR_URL = 'http://generator.openportfolio.ru/gencertpdf/VR"

@@ -6,6 +6,7 @@ import gnupg
 import math
 import os
 import re
+import requests
 import shutil
 import StringIO
 import uuid
@@ -244,7 +245,8 @@ class CertificateGen(object):
         # get the template version based on the course settings in the
         # certificates repo, with sensible defaults so that we can generate
         # pdfs differently for the different templates
-        self.template_version = cert_data.get('VERSION', 1)
+        default_version = getattr(settings, "DEFAULT_VERSION", 1)
+        self.template_version = cert_data.get('VERSION', default_version)
         self.template_type = 'honor'
         # search for certain keywords in the file name, we'll probably want to
         # be better at parsing this later
@@ -375,6 +377,7 @@ class CertificateGen(object):
             'stanford': self._generate_stanford_SOA,
             '3_dynamic': self._generate_v3_dynamic_certificate,
             'stanford_cme': self._generate_stanford_cme_certificate,
+            'extern': self._generate_extern_generator_certificate
         }
         # TODO: we should be taking args, kwargs, and passing those on to our callees
         return versionmap[self.template_version](
@@ -1205,6 +1208,8 @@ class CertificateGen(object):
                 output_dir, verify_uuid, "verify.html"), 'w') as f:
             f.write(verify_page.encode('utf-8'))
 
+
+
     def _ensure_dir(self, f):
         d = os.path.dirname(f)
         if not os.path.exists(d):
@@ -1977,3 +1982,40 @@ class CertificateGen(object):
             )
 
         return (download_uuid, verify_uuid, download_url)
+
+    def _generate_extern_generator_certificate(
+        self,
+        student_name,
+        download_dir,
+        verify_dir,
+        filename=TARGET_FILENAME,
+        grade=None,
+        designation=None,
+    ):
+        verify_uuid = uuid.uuid4().hex
+        download_uuid = uuid.uuid4().hex
+        download_url = "{base_url}/{cert}/{uuid}/{file}".format(
+            base_url=settings.CERT_DOWNLOAD_URL,
+            cert=S3_CERT_PATH, uuid=download_uuid, file=filename)
+        filename = os.path.join(download_dir, download_uuid, filename)
+        base_url = settings.EXTERN_GENERATOR_URL
+        subtitle_1 = getattr(settings, EXTERN_GENERATOR_SUBTITLE, "Has successfully completed ")
+        background = getattr(settings, EXTERN_GENERATOR_BACKGROUNDS, {self.course_id:"Certificate_VR_BG-01.png"})[self.course_id]
+        data = {
+            "number": download_uuid,
+            "date":get_cert_date(None, 'ROLLING'),
+            "username":student_name,
+            "subtitle_1": subtitle_1,
+            "subtitle_2": self.course_name,
+            "subtitle_3": "with a score {}".format(str(grade)),
+            "background": background,
+            "certname": "CERTIFICATE",
+        }
+        logging.info("Try extern generate, url:{}, data:{}".format(base_url, str(data)))
+        response = request.get(base_url, data=data)
+        if not response.ok:
+            logging.error("Extern generate error: {}".format(str(response)))
+            raise ValueError("Failed to generate extern cert")
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        return (download_uuid, "No Verification", download_url)
