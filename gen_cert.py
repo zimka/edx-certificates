@@ -256,15 +256,17 @@ class CertificateGen(object):
         template_pdf = cert_data.get('TEMPLATEFILE', template_pdf)
         template_prefix = '{0}/v{1}-cert-templates'.format(TEMPLATE_DIR, self.template_version)
         template_pdf_filename = "{0}/certificate-template-{1}-{2}.pdf".format(template_prefix, self.org, self.course)
-        if template_pdf:
-            template_pdf_filename = "{0}/{1}".format(template_prefix, template_pdf)
-            if 'verified' in template_pdf:
-                self.template_type = 'verified'
-        try:
-            self.template_pdf = PdfFileReader(file(template_pdf_filename, "rb"))
-        except IOError as e:
-            log.critical("I/O error ({0}): {1} opening {2}".format(e.errno, e.strerror, template_pdf_filename))
-            raise
+        
+        if self.template_version != 'extern':
+            if template_pdf:
+                template_pdf_filename = "{0}/{1}".format(template_prefix, template_pdf)
+                if 'verified' in template_pdf:
+                    self.template_type = 'verified'
+            try:
+                self.template_pdf = PdfFileReader(file(template_pdf_filename, "rb"))
+            except IOError as e:
+                log.critical("I/O error ({0}): {1} opening {2}".format(e.errno, e.strerror, template_pdf_filename))
+                raise
 
         self.cert_label_singular = cert_data.get('CERTS_ARE_CALLED', CERTS_ARE_CALLED)
         self.cert_label_plural = cert_data.get('CERTS_ARE_CALLED_PLURAL', CERTS_ARE_CALLED_PLURAL)
