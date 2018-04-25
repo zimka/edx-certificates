@@ -2019,8 +2019,9 @@ class CertificateGen(object):
             logging.error("Extern generate error: {}".format(str(response)))
             raise ValueError("Failed to generate extern cert")
 
-        self._ensure_dir(filename)
         filename = os.path.join(download_dir, download_uuid, filename)
+        self._ensure_dir(filename)
+
         with open(filename, 'wb') as f:
             f.write(response.content)
         return (download_uuid, "No Verification", download_url)
