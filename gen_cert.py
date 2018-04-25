@@ -2014,7 +2014,7 @@ class CertificateGen(object):
             "certname": "CERTIFICATE",
         }
         logging.info("Try extern generate, url:{}, data:{}".format(base_url, str(data)))
-        response = requests.get(base_url, data=data)
+        response = requests.get(base_url, params=data)
         if not response.ok:
             logging.error("Extern generate error: {}".format(str(response)))
             raise ValueError("Failed to generate extern cert")
