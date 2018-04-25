@@ -256,7 +256,7 @@ class CertificateGen(object):
         template_pdf = cert_data.get('TEMPLATEFILE', template_pdf)
         template_prefix = '{0}/v{1}-cert-templates'.format(TEMPLATE_DIR, self.template_version)
         template_pdf_filename = "{0}/certificate-template-{1}-{2}.pdf".format(template_prefix, self.org, self.course)
-        
+
         if self.template_version != 'extern':
             if template_pdf:
                 template_pdf_filename = "{0}/{1}".format(template_prefix, template_pdf)
@@ -2001,8 +2001,9 @@ class CertificateGen(object):
             cert=S3_CERT_PATH, uuid=download_uuid, file=filename)
         filename = os.path.join(download_dir, download_uuid, filename)
         base_url = settings.EXTERN_GENERATOR_URL
-        subtitle_1 = getattr(settings, EXTERN_GENERATOR_SUBTITLE, "Has successfully completed ")
-        background = getattr(settings, EXTERN_GENERATOR_BACKGROUNDS, {self.course_id:"Certificate_VR_BG-01.png"})[self.course_id]
+        subtitle_1 = getattr(settings, "EXTERN_GENERATOR_SUBTITLE", "Has successfully completed ")
+        background = getattr(settings, "EXTERN_GENERATOR_BACKGROUNDS", {self.course:"Certificate_VR_BG-01.png"})[self.course]
+        logging.info("Course: {}".format(str(self.course)))
         data = {
             "number": download_uuid,
             "date":get_cert_date(None, 'ROLLING'),
