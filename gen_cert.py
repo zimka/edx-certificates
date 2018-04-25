@@ -1999,7 +1999,6 @@ class CertificateGen(object):
         download_url = "{base_url}/{cert}/{uuid}/{file}".format(
             base_url=settings.CERT_DOWNLOAD_URL,
             cert=S3_CERT_PATH, uuid=download_uuid, file=filename)
-        filename = os.path.join(download_dir, download_uuid, filename)
         base_url = settings.EXTERN_GENERATOR_URL
         subtitle_1 = getattr(settings, "EXTERN_GENERATOR_SUBTITLE", "Has successfully completed ")
         background = getattr(settings, "EXTERN_GENERATOR_BACKGROUNDS", {self.course:"Certificate_VR_BG-01.png"})[self.course]
@@ -2009,16 +2008,20 @@ class CertificateGen(object):
             "date":get_cert_date(None, 'ROLLING'),
             "username":student_name,
             "subtitle_1": subtitle_1,
-            "subtitle_2": self.course_name,
+            "subtitle_2": self.long_course.decode('utf-8'),
             "subtitle_3": "with a score {}".format(str(grade)),
             "background": background,
             "certname": "CERTIFICATE",
         }
         logging.info("Try extern generate, url:{}, data:{}".format(base_url, str(data)))
-        response = request.get(base_url, data=data)
+        response = requests.get(base_url, data=data)
         if not response.ok:
             logging.error("Extern generate error: {}".format(str(response)))
             raise ValueError("Failed to generate extern cert")
+
+        directory = os.path.join(download_dir, download_uuid)
+        self._ensure_dir(directory)
+        filename = os.path.join(directory, filename)
         with open(filename, 'wb') as f:
             f.write(response.content)
         return (download_uuid, "No Verification", download_url)
